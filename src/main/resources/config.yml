@@ -1,0 +1,22 @@
+# === Inbound messages ===
+# If false, this server will ignore these messages when received from other servers.
+inbound:
+  nick: true
+  mail:
+    add: true
+    clear: true
+
+# === Outbound messages ===
+# If false, this server won't send these messages to other servers.
+inbound:
+  nick: true
+  mail:
+    add: true
+    clear: true
+
+# === Redis connection ===
+# Don't change the id!
+redis:
+  address: localhost
+  port: 6379
+  prefix: essx
