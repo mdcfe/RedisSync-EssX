@@ -1,4 +1,4 @@
-package io.github.md678685.redissync.essx;
+package io.github.md678685.mcsync.essx;
 
 import io.github.md678685.redisqueue.RedisQueueConfig;
 import me.lucko.helper.config.ConfigurationNode;
@@ -8,9 +8,9 @@ import java.util.UUID;
 public class Config implements RedisQueueConfig {
 
     private ConfigurationNode baseNode;
-    private RedisSyncPlugin plugin;
+    private SyncPlugin plugin;
 
-    Config(RedisSyncPlugin plugin) {
+    Config(SyncPlugin plugin) {
         this.plugin = plugin;
         baseNode = plugin.loadConfigNode("config.yml");
     }

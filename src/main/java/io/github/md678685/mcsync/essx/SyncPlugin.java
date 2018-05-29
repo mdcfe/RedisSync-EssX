@@ -1,7 +1,12 @@
-package io.github.md678685.redissync.essx;
+package io.github.md678685.mcsync.essx;
 
 import com.earth2me.essentials.Essentials;
+
+import org.bukkit.plugin.ServicePriority;
+
 import io.github.md678685.redisqueue.RedisQueue;
+import me.lucko.helper.Schedulers;
+import me.lucko.helper.Services;
 import me.lucko.helper.config.ConfigFactory;
 import me.lucko.helper.config.ConfigurationNode;
 import me.lucko.helper.maven.MavenLibrary;
@@ -9,6 +14,7 @@ import me.lucko.helper.plugin.ExtendedJavaPlugin;
 import me.lucko.helper.plugin.ap.Plugin;
 import me.lucko.helper.plugin.ap.PluginDependency;
 import net.ess3.api.IEssentials;
+import net.ess3.api.sync.ISyncProvider;
 
 /**
  * Redis sync plugin demonstrating the EssentialsX sync framework.
@@ -18,9 +24,9 @@ import net.ess3.api.IEssentials;
         @PluginDependency("Essentials") })
 @MavenLibrary(groupId = "org.apache.commons", artifactId = "commons-pool2", version = "2.4.2")
 @MavenLibrary(groupId = "redis.clients", artifactId = "jedis", version = "2.9.0")
-public class RedisSyncPlugin extends ExtendedJavaPlugin {
+public class SyncPlugin extends ExtendedJavaPlugin {
 
-    private static RedisSyncPlugin instance;
+    private static SyncPlugin instance;
 
     private Config config;
     private IEssentials ess;
@@ -35,15 +41,16 @@ public class RedisSyncPlugin extends ExtendedJavaPlugin {
     public void enable() {
         config = new Config(this);
 
-        ess = getPlugin(Essentials.class);
+        ess = getPlugin("Essentials", Essentials.class);
 
         queue = new RedisQueue(config);
         queue.registerConsumer();
 
-        RedisMessageHandlers.registerHandlers(queue, ess);
-        RedisMessageHandlers.startAwaitTask(queue);
+        new RedisMessageHandler(ess).registerHandlers(queue, ess);
 
-        ess.addSyncProvider("redis", new RedisSyncProvider(config, queue));
+        Schedulers.async().runRepeating(queue::awaitMessage, 0, 100);
+
+        Services.provide(ISyncProvider.class, new SyncProvider(config, queue), this, ServicePriority.High);
     }
 
     @Override
@@ -55,7 +62,7 @@ public class RedisSyncPlugin extends ExtendedJavaPlugin {
         ConfigFactory.yaml().save(getBundledFile(file), node);
     }
 
-    public static RedisSyncPlugin getInstance() {
+    public static SyncPlugin getInstance() {
         return instance;
     }
 
