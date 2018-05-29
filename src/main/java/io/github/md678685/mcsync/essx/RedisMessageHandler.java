@@ -71,7 +71,7 @@ public class RedisMessageHandler {
             UUID uuid = UUID.fromString(m.group(1));
             String muteStatus = m.group(2);
 
-            SyncPlugin.getInstance().getLogger().info(uuid + " mailbox emptied");
+            SyncPlugin.getInstance().getLogger().info(uuid + " mute status set to " + muteStatus);
 
             ess.getUser(uuid).setMuted(Boolean.parseBoolean(muteStatus), false);
             return true;
@@ -85,7 +85,7 @@ public class RedisMessageHandler {
             UUID uuid = UUID.fromString(m.group(1));
             String muteTimeout = m.group(2);
 
-            SyncPlugin.getInstance().getLogger().info(uuid + " mailbox emptied");
+            SyncPlugin.getInstance().getLogger().info(uuid + " mute timeout set to " + muteTimeout);
 
             ess.getUser(uuid).setMuteTimeout(Long.parseLong(muteTimeout));
             return true;
