@@ -1,7 +1,6 @@
 package io.github.md678685.mcsync.essx;
 
 import io.github.md678685.redisqueue.RedisQueue;
-import me.lucko.helper.Schedulers;
 import net.ess3.api.IEssentials;
 
 import java.util.UUID;
@@ -10,30 +9,37 @@ import java.util.regex.Pattern;
 
 public class RedisMessageHandler {
 
-    private static final Pattern MAIL_PATTERN = Pattern.compile("MAIL to ([0-9a-f-]+) reads (.+)");
+    private static final Pattern MAIL_ADD_PATTERN = Pattern.compile("MAIL to ([0-9a-f-]+) reads (.+)");
+    private static final Pattern MAIL_CLEAR_PATTERN = Pattern.compile("MAIL of ([0-9a-f-]+) clear");
+    private static final Pattern MUTE_STATUS_PATTERN = Pattern.compile("MUTE of ([0-9a-f-]+) is (true|false)");
+    private static final Pattern MUTE_TIMEOUT_PATTERN = Pattern.compile("MUTE of ([0-9a-f-]+) timeout ([0-9]+)");
     private static final Pattern NICK_PATTERN = Pattern.compile("NICK of ([0-9a-f-]+) now (.+)");
 
     private final IEssentials ess;
 
-    public RedisMessageHandler(IEssentials ess) {
+    RedisMessageHandler(IEssentials ess) {
         this.ess = ess;
     }
 
-    public void registerHandlers(RedisQueue queue, IEssentials ess) {
+    void registerHandlers(RedisQueue queue, IEssentials ess) {
         queue.addHandler(this::onMessageReceived);
 
         queue.addHandler(this::onMailAdd);
+        queue.addHandler(this::onMailClear);
+
+        queue.addHandler(this::onMuteStatus);
+        queue.addHandler(this::onMuteTimeout);
 
         queue.addHandler(this::onNickChange);
     }
 
-    public boolean onMessageReceived(String msg) {
+    private boolean onMessageReceived(String msg) {
         SyncPlugin.getInstance().getLogger().info("Inbound: " + msg);
         return false;
     }
 
-    public boolean onMailAdd(String msg) {
-        Matcher m = MAIL_PATTERN.matcher(msg);
+    private boolean onMailAdd(String msg) {
+        Matcher m = MAIL_ADD_PATTERN.matcher(msg);
         if (m.find()) {
             UUID uuid = UUID.fromString(m.group(1));
             String mailMsg = m.group(2);
@@ -46,7 +52,48 @@ public class RedisMessageHandler {
         return false;
     }
 
-    public boolean onNickChange(String msg) {
+    private boolean onMailClear(String msg) {
+        Matcher m = MAIL_CLEAR_PATTERN.matcher(msg);
+        if (m.find()) {
+            UUID uuid = UUID.fromString(m.group(1));
+
+            SyncPlugin.getInstance().getLogger().info(uuid + " mailbox emptied");
+
+            ess.getUser(uuid).clearMail(false);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean onMuteStatus(String msg) {
+        Matcher m = MUTE_STATUS_PATTERN.matcher(msg);
+        if (m.find()) {
+            UUID uuid = UUID.fromString(m.group(1));
+            String muteStatus = m.group(2);
+
+            SyncPlugin.getInstance().getLogger().info(uuid + " mailbox emptied");
+
+            ess.getUser(uuid).setMuted(Boolean.parseBoolean(muteStatus), false);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean onMuteTimeout(String msg) {
+        Matcher m = MUTE_TIMEOUT_PATTERN.matcher(msg);
+        if (m.find()) {
+            UUID uuid = UUID.fromString(m.group(1));
+            String muteTimeout = m.group(2);
+
+            SyncPlugin.getInstance().getLogger().info(uuid + " mailbox emptied");
+
+            ess.getUser(uuid).setMuteTimeout(Long.parseLong(muteTimeout));
+            return true;
+        }
+        return false;
+    }
+
+    private boolean onNickChange(String msg) {
         Matcher m = NICK_PATTERN.matcher(msg);
         if (m.find()) {
             UUID uuid = UUID.fromString(m.group(1));
